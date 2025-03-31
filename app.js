@@ -3,6 +3,7 @@ import basicAuthMiddleware from './middlewares/auth.js';
 import billRoute from './routes/bill.js';
 import billsRoute from './routes/bills.js';
 import clientRoute from './routes/client.js';
+import clientsRoute from './routes/clients.js';
 import loginRoute from './routes/login.js';
 import validateCpfRoute from './routes/validadeCpf.js';
 import validateTelephoneRoute from './routes/validateTelephone.js';
@@ -23,6 +24,7 @@ app.use(validateCpfRoute);
 app.use(validateTelephoneRoute);
 app.use(billsRoute);
 app.use(billRoute);
+app.use(clientsRoute);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

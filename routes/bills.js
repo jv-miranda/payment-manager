@@ -27,10 +27,12 @@ router.get('/bills', basicAuthMiddleware, async (req, res) => {
 
     const bills = await prisma.bills.findMany({
       where,
+      orderBy: {
+        scheduled_date: 'asc',
+      },
       skip: page * 10,
       take: 10,
       include: {
-        client: true,
         client: {
           include: {
             vendor: true,
