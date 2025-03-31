@@ -16,9 +16,9 @@ const parseDate = dateString => {
 
 router.post('/bill', basicAuthMiddleware, async (req, res) => {
   try {
-    const { id, client_id, notes, status, payment_method, scheduled_date, value } = req.body;
+    const { id, client_id, notes, payment_method, scheduled_date, value } = req.body;
 
-    if (!client_id || !status || !payment_method || !scheduled_date || value === undefined) {
+    if (!client_id || !payment_method || !scheduled_date || value === undefined) {
       return res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
     }
 
@@ -32,30 +32,29 @@ router.post('/bill', basicAuthMiddleware, async (req, res) => {
       if (existingBill && existingBill.status === 'pago') {
         return res.status(400).json({ message: 'Não é possível editar uma cobrança com status "pago".' });
       }
-    }
 
-    const bill = id
-      ? await prisma.bills.update({
-          where: { id },
-          data: {
-            client_id,
-            notes,
-            status,
-            payment_method,
-            scheduled_date: parsedDate.toDate(),
-            value,
-          },
-        })
-      : await prisma.bills.create({
-          data: {
-            client_id,
-            notes,
-            status,
-            payment_method,
-            scheduled_date: parsedDate.toDate(),
-            value,
-          },
-        });
+      await prisma.bills.update({
+        where: { id },
+        data: {
+          client_id,
+          notes,
+          payment_method,
+          scheduled_date: parsedDate.toDate(),
+          value,
+        },
+      });
+    } else {
+      await prisma.bills.create({
+        data: {
+          client_id,
+          notes,
+          payment_method,
+          scheduled_date: parsedDate.toDate(),
+          value,
+          status: 'pendente',
+        },
+      });
+    }
 
     return res.status(200).send();
   } catch (error) {

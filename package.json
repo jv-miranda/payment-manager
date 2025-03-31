@@ -4,7 +4,7 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "test": "npm run dev"
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -20,5 +20,9 @@
     "moment-timezone": "^0.5.48",
     "pg": "^8.14.1",
     "prisma": "^6.5.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.0",
+    "vitest": "^3.1.1"
   }
 }
