@@ -36,6 +36,20 @@ model Client {
   address   String?
   vendor    Vendor? @relation(fields: [vendor_id], references: [id])
   vendor_id Int
+  Bills     Bills[]
 
   @@map("clients")
+}
+
+model Bills {
+  id             Int      @id @default(autoincrement())
+  client         Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  client_id      Int?
+  notes          String?
+  status         String
+  payment_method String
+  scheduled_date DateTime
+  value          Decimal
+
+  @@map("bills")
 }

@@ -28,4 +28,33 @@ router.get('/vendor', basicAuthMiddleware, async (req, res) => {
   }
 });
 
+router.post('/vendor', basicAuthMiddleware, async (req, res) => {
+  try {
+    const { id, name, cpf, telephone } = req.body;
+
+    if (!name || !cpf || !telephone) {
+      return res.status(400).json({ message: 'Parâmetros inválidos.' });
+    }
+
+    const cpfFormatted = cpf.replace(/\D/g, '');
+    const telephoneFormatted = telephone.replace(/\D/g, '');
+
+    if (id) {
+      await prisma.vendor.update({
+        where: { id },
+        data: { name, cpf: cpfFormatted, telephone: telephoneFormatted },
+      });
+    } else {
+      await prisma.vendor.create({
+        data: { name, cpf: cpfFormatted, telephone: telephoneFormatted },
+      });
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro interno no servidor.' });
+  }
+});
+
 export default router;
