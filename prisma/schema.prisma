@@ -18,7 +18,7 @@ model User {
 
 model Vendor {
   id        Int      @id @default(autoincrement())
-  telephone String?
+  telephone String?  @unique
   cpf       String   @unique
   name      String
   Client    Client[]
@@ -31,7 +31,7 @@ model Client {
   name      String
   cpf       String  @unique
   notes     String?
-  telephone String?
+  telephone String? @unique
   cep       String?
   address   String?
   vendor    Vendor? @relation(fields: [vendor_id], references: [id])
