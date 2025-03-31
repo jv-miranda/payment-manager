@@ -7,7 +7,9 @@ import cashRegistersRoute from './routes/cashRegisters.js';
 import clientRoute from './routes/client.js';
 import clientsRoute from './routes/clients.js';
 import loginRoute from './routes/login.js';
+import paymentReportRoute from './routes/paymentReport.js';
 import validateCpfRoute from './routes/validadeCpf.js';
+import validateNameRoute from './routes/validateName.js';
 import validateTelephoneRoute from './routes/validateTelephone.js';
 import vendorRoute from './routes/vendor.js';
 import vendorsRoute from './routes/vendors.js';
@@ -29,6 +31,8 @@ app.use(billRoute);
 app.use(clientsRoute);
 app.use(cashRegisterRoute);
 app.use(cashRegistersRoute);
+app.use(paymentReportRoute);
+app.use(validateNameRoute);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
