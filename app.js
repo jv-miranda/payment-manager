@@ -2,6 +2,8 @@ import express from 'express';
 import basicAuthMiddleware from './middlewares/auth.js';
 import billRoute from './routes/bill.js';
 import billsRoute from './routes/bills.js';
+import cashRegisterRoute from './routes/cashRegister.js';
+import cashRegistersRoute from './routes/cashRegisters.js';
 import clientRoute from './routes/client.js';
 import clientsRoute from './routes/clients.js';
 import loginRoute from './routes/login.js';
@@ -25,6 +27,8 @@ app.use(validateTelephoneRoute);
 app.use(billsRoute);
 app.use(billRoute);
 app.use(clientsRoute);
+app.use(cashRegisterRoute);
+app.use(cashRegistersRoute);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

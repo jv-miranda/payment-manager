@@ -17,39 +17,57 @@ model User {
 }
 
 model Vendor {
-  id        Int      @id @default(autoincrement())
-  telephone String?  @unique
-  cpf       String   @unique
-  name      String
-  Client    Client[]
+  id           Int            @id @default(autoincrement())
+  telephone    String?        @unique
+  cpf          String         @unique
+  name         String
+  Client       Client[]
+  CashRegister CashRegister[]
 
   @@map("vendors")
 }
 
 model Client {
-  id        Int     @id @default(autoincrement())
-  name      String
-  cpf       String  @unique
-  notes     String?
-  telephone String? @unique
-  cep       String?
-  address   String?
-  vendor    Vendor? @relation(fields: [vendor_id], references: [id])
-  vendor_id Int
-  Bills     Bills[]
+  id           Int            @id @default(autoincrement())
+  name         String
+  cpf          String         @unique
+  notes        String?
+  telephone    String?        @unique
+  cep          String?
+  address      String?
+  vendor       Vendor?        @relation(fields: [vendor_id], references: [id])
+  vendor_id    Int
+  Bills        Bills[]
+  CashRegister CashRegister[]
 
   @@map("clients")
 }
 
 model Bills {
-  id             Int      @id @default(autoincrement())
-  client         Client?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  id             Int            @id @default(autoincrement())
+  client         Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
   client_id      Int?
   notes          String?
   status         String
   payment_method String
   scheduled_date DateTime
   value          Decimal
+  CashRegister   CashRegister[]
 
   @@map("bills")
+}
+
+model CashRegister {
+  id               Int      @id @default(autoincrement())
+  client_id        Int
+  client           Client   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  vendor_id        Int
+  vendor           Vendor   @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  bill_id          Int
+  bill             Bills    @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+  date             DateTime @default(now())
+  bill_value       Decimal
+  vendor_day_costs Decimal
+
+  @@map("cash_registers")
 }
