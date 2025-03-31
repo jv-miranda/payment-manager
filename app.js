@@ -1,16 +1,22 @@
 import express from 'express';
 import basicAuthMiddleware from './middlewares/auth.js';
+import clientRoute from './routes/client.js';
 import loginRoute from './routes/login.js';
+import validateCpfRoute from './routes/validadeCpf.js';
 import vendorRoute from './routes/vendor.js';
 import vendorsRoute from './routes/vendors.js';
 
 const app = express();
 
 app.use(express.json());
+
+app.use(basicAuthMiddleware);
+
 app.use(loginRoute);
 app.use(vendorsRoute);
 app.use(vendorRoute);
-app.use(basicAuthMiddleware);
+app.use(clientRoute);
+app.use(validateCpfRoute);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

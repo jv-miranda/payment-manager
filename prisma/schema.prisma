@@ -17,10 +17,25 @@ model User {
 }
 
 model Vendor {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   telephone String?
-  cpf       String  @unique
+  cpf       String   @unique
   name      String
+  Client    Client[]
 
   @@map("vendors")
+}
+
+model Client {
+  id        Int     @id @default(autoincrement())
+  name      String
+  cpf       String  @unique
+  notes     String?
+  telephone String?
+  cep       String?
+  address   String?
+  vendor    Vendor? @relation(fields: [vendor_id], references: [id])
+  vendor_id Int
+
+  @@map("clients")
 }
