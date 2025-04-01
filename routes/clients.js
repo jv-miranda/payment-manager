@@ -23,23 +23,26 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
     });
 
     const clientIds = clients.map(client => client.id);
+    let rawStatus = [];
 
-    const rawStatus = await prisma.$queryRaw`
-      SELECT c.id,
-        CASE
-          WHEN MAX(CURRENT_DATE - b.scheduled_date::date) IS NULL THEN 'no_prazo'
-          WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 5 THEN 'grande_atraso'
-          WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 0 THEN 'medio_atraso'
-          ELSE 'no_prazo'
-        END AS status
-      FROM clients c
-      LEFT JOIN bills b 
-        ON b.client_id = c.id 
-       AND b.status = 'pendente' 
-       AND b.scheduled_date < CURRENT_DATE
-      WHERE c.id IN (${Prisma.join(clientIds)})
-      GROUP BY c.id
-    `;
+    if (clientIds.length > 0) {
+      rawStatus = await prisma.$queryRaw`
+        SELECT c.id,
+          CASE
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) IS NULL THEN 'no_prazo'
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 5 THEN 'grande_atraso'
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 0 THEN 'medio_atraso'
+            ELSE 'no_prazo'
+          END AS status
+        FROM clients c
+        LEFT JOIN bills b 
+          ON b.client_id = c.id 
+         AND b.status = 'pendente' 
+         AND b.scheduled_date < CURRENT_DATE
+        WHERE c.id IN (${Prisma.join(clientIds)})
+        GROUP BY c.id
+      `;
+    }
 
     const statusMap = {};
     for (const row of rawStatus) {
@@ -63,7 +66,6 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
 
     return res.json(filteredClients);
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: 'Erro interno no servidor.' });
   }
 });

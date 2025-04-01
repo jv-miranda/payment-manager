@@ -4,7 +4,9 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "connectVm": "ssh -v root@159.223.191.120",
+    "deploy": "tar -czf - --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='.vscode' . | ssh root@159.223.191.120 'rm -rf /var/www/payment-manager/* && tar -xzf - -C /var/www/payment-manager' && ssh root@159.223.191.120 'cd /var/www/payment-manager && npm install --production && npx prisma migrate deploy && pm2 restart payment-manager'"
   },
   "repository": {
     "type": "git",
