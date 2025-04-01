@@ -6,7 +6,7 @@
   "scripts": {
     "test": "vitest",
     "connectVm": "ssh -v root@159.223.191.120",
-    "deploy": "tar -czf - --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='.vscode' . | ssh root@159.223.191.120 'rm -rf /var/www/payment-manager/* && tar -xzf - -C /var/www/payment-manager' && ssh root@159.223.191.120 'cd /var/www/payment-manager && npm install --production && npx prisma migrate deploy && pm2 restart payment-manager'"
+    "deploy": "@echo off && echo [1/7] Creating tarball... && tar -cvzf deploy.tar.gz --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='.vscode' --exclude='.log' . && echo [2/7] Transferring to droplet... && scp -v deploy.tar.gz root@159.223.191.120:/tmp/ && echo [3/7] Removing old files... && ssh root@159.223.191.120 'cd /var/www/payment-manager && rm -rf ./' && echo [4/7] Extracting files... && ssh root@159.223.191.120 'tar -xvzf /tmp/deploy.tar.gz -C /var/www/payment-manager' && echo [5/7] Installing dependencies... && ssh root@159.223.191.120 'cd /var/www/payment-manager && npm install --production' && echo [6/7] Running migrations... && ssh root@159.223.191.120 'cd /var/www/payment-manager && npx prisma migrate deploy && echo [7/7] Restarting PM2... && ssh root@159.223.191.120 'pm2 restart payment-manager' && echo Cleaning up... && del deploy.tar.gz && echo Deployment successful! || (echo Deployment failed! && exit 1)"
   },
   "repository": {
     "type": "git",
