@@ -1,3 +1,4 @@
+import cors from 'cors';
 import express from 'express';
 import basicAuthMiddleware from './middlewares/auth.js';
 import billRoute from './routes/bill.js';
@@ -15,6 +16,8 @@ import vendorRoute from './routes/vendor.js';
 import vendorsRoute from './routes/vendors.js';
 
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
