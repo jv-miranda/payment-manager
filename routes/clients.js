@@ -1,9 +1,14 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import express from 'express';
+import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+const formatDate = date => {
+  return moment(date).format('DD/MM/YYYY');
+};
 
 router.get('/clients', basicAuthMiddleware, async (req, res) => {
   try {
@@ -38,7 +43,7 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
       clientIdsFilteredByStatus = statusRaw.map(row => row.id);
 
       if (clientIdsFilteredByStatus.length === 0) {
-        return res.json([]); // nenhum cliente com esse status
+        return res.json([]);
       }
 
       filters.id = { in: clientIdsFilteredByStatus };
@@ -89,6 +94,7 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
       address: client.address,
       cep: client.cep,
       status: statusMap[client.id] || 'no_prazo',
+      created_at: formatDate(client.created_at),
     }));
 
     return res.json(clientsWithStatus);

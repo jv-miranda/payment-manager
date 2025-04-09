@@ -1,9 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
+import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+const formatDate = date => {
+  return moment(date).format('DD/MM/YYYY');
+};
 
 const calculateClientStatus = async client_id => {
   const result = await prisma.$queryRaw`
@@ -52,6 +57,7 @@ router.get('/client', basicAuthMiddleware, async (req, res) => {
       address: client.address,
       cep: client.cep,
       status: clientStatus,
+      created_at: formatDate(client.created_at),
     };
 
     res.json(clientResponse);

@@ -36,6 +36,7 @@ model Client {
   telephone    String?        @unique(map: "unique_telephone_clients") @db.VarChar(20)
   cep          String?        @db.VarChar(10)
   address      String?
+  created_at   DateTime       @default(now())
   Bills        Bills[]
   CashRegister CashRegister[]
   vendor       Vendor?        @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
@@ -51,6 +52,7 @@ model Bills {
   payment_method String         @db.VarChar(10)
   scheduled_date DateTime       @db.Date
   value          Decimal        @db.Decimal(10, 2)
+  created_at     DateTime       @default(now())
   client         Client?        @relation(fields: [client_id], references: [id], onUpdate: NoAction)
   CashRegister   CashRegister[]
 
