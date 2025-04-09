@@ -8,23 +8,52 @@ const prisma = new PrismaClient();
 router.get('/clients', basicAuthMiddleware, async (req, res) => {
   try {
     const { name, id, cpf, telephone, vendor_id, page = 0, status } = req.query;
-    const where = {};
-    if (id) where.id = Number(id);
-    if (name) where.name = { contains: name, mode: 'insensitive' };
-    if (cpf) where.cpf = cpf;
-    if (telephone) where.telephone = telephone;
-    if (vendor_id) where.vendor_id = Number(vendor_id);
+    const filters = {};
+    if (id) filters.id = Number(id);
+    if (name) filters.name = { contains: name, mode: 'insensitive' };
+    if (cpf) filters.cpf = cpf;
+    if (telephone) filters.telephone = telephone;
+    if (vendor_id) filters.vendor_id = Number(vendor_id);
+
+    let clientIdsFilteredByStatus = null;
+
+    if (status) {
+      const statusRaw = await prisma.$queryRaw`
+        SELECT c.id
+        FROM clients c
+        LEFT JOIN bills b 
+          ON b.client_id = c.id 
+         AND b.status = 'pendente' 
+         AND b.scheduled_date < CURRENT_DATE
+        GROUP BY c.id
+        HAVING
+          CASE
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) IS NULL THEN 'no_prazo'
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 5 THEN 'grande_atraso'
+            WHEN MAX(CURRENT_DATE - b.scheduled_date::date) > 0 THEN 'medio_atraso'
+            ELSE 'no_prazo'
+          END = ${status}
+      `;
+
+      clientIdsFilteredByStatus = statusRaw.map(row => row.id);
+
+      if (clientIdsFilteredByStatus.length === 0) {
+        return res.json([]); // nenhum cliente com esse status
+      }
+
+      filters.id = { in: clientIdsFilteredByStatus };
+    }
 
     const clients = await prisma.client.findMany({
-      where,
+      where: filters,
       skip: Number(page) * 10,
       take: 10,
       include: { vendor: true },
     });
 
     const clientIds = clients.map(client => client.id);
-    let rawStatus = [];
 
+    let rawStatus = [];
     if (clientIds.length > 0) {
       rawStatus = await prisma.$queryRaw`
         SELECT c.id,
@@ -62,10 +91,9 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
       status: statusMap[client.id] || 'no_prazo',
     }));
 
-    const filteredClients = status ? clientsWithStatus.filter(client => client.status === status) : clientsWithStatus;
-
-    return res.json(filteredClients);
+    return res.json(clientsWithStatus);
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: 'Erro interno no servidor.' });
   }
 });

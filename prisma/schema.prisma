@@ -1,73 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
   id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
+  email    String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+  name     String @db.VarChar(100)
 
   @@map("users")
 }
 
 model Vendor {
   id           Int            @id @default(autoincrement())
-  telephone    String?        @unique
-  cpf          String         @unique
-  name         String
-  Client       Client[]
+  telephone    String?        @unique(map: "unique_telephone_vendors") @db.VarChar(20)
+  cpf          String         @unique @db.VarChar(20)
+  name         String         @db.VarChar(255)
   CashRegister CashRegister[]
+  Client       Client[]
 
   @@map("vendors")
 }
 
 model Client {
   id           Int            @id @default(autoincrement())
-  name         String
-  cpf          String         @unique
+  name         String         @db.VarChar(255)
+  cpf          String         @unique @db.VarChar(14)
+  vendor_id    Int?
   notes        String?
-  telephone    String?        @unique
-  cep          String?
+  telephone    String?        @unique(map: "unique_telephone_clients") @db.VarChar(20)
+  cep          String?        @db.VarChar(10)
   address      String?
-  vendor       Vendor?        @relation(fields: [vendor_id], references: [id])
-  vendor_id    Int
   Bills        Bills[]
   CashRegister CashRegister[]
+  vendor       Vendor?        @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
 
   @@map("clients")
 }
 
 model Bills {
   id             Int            @id @default(autoincrement())
-  client         Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
   client_id      Int?
   notes          String?
-  status         String
-  payment_method String
-  scheduled_date DateTime
-  value          Decimal
+  status         String         @db.VarChar(10)
+  payment_method String         @db.VarChar(10)
+  scheduled_date DateTime       @db.Date
+  value          Decimal        @db.Decimal(10, 2)
+  client         Client?        @relation(fields: [client_id], references: [id], onUpdate: NoAction)
   CashRegister   CashRegister[]
 
   @@map("bills")
 }
 
 model CashRegister {
-  id               Int      @id @default(autoincrement())
-  client_id        Int
-  client           Client   @relation(fields: [client_id], references: [id], onDelete: Cascade)
-  vendor_id        Int
-  vendor           Vendor   @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
-  bill_id          Int
-  bill             Bills    @relation(fields: [bill_id], references: [id], onDelete: Cascade)
-  date             DateTime @default(now())
-  bill_value       Decimal
-  vendor_day_costs Decimal
+  id               Int       @id @default(autoincrement())
+  client_id        Int?
+  vendor_id        Int?
+  bill_id          Int?
+  date             DateTime? @default(now()) @db.Timestamp(6)
+  bill_value       Decimal   @db.Decimal(10, 2)
+  vendor_day_costs Decimal   @db.Decimal(10, 2)
+  bill             Bills?    @relation(fields: [bill_id], references: [id], onUpdate: NoAction)
+  client           Client?   @relation(fields: [client_id], references: [id], onUpdate: NoAction)
+  vendor           Vendor?   @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
 
   @@map("cash_registers")
 }
