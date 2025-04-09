@@ -52,6 +52,7 @@ router.get('/bills', basicAuthMiddleware, async (req, res) => {
       payment_method: bill.payment_method,
       scheduled_date: bill.scheduled_date ? formatDate(bill.scheduled_date) : null,
       value: bill.value,
+      created_at: formatDate(bill.created_at),
     }));
 
     return res.json(formattedBills);
