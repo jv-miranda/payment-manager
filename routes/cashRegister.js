@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -13,6 +14,10 @@ const formatDate = date => {
 router.post('/cash_register', basicAuthMiddleware, async (req, res) => {
   try {
     const { client_id, vendor_id, date, bill_id, vendor_day_costs } = req.body;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
 
     if (!client_id || !vendor_id || !date || !bill_id || vendor_day_costs === undefined) {
       return res.status(400).json({ erro: 'Todos os campos são obrigatórios.' });
@@ -35,6 +40,7 @@ router.post('/cash_register', basicAuthMiddleware, async (req, res) => {
         bill_id,
         bill_value: bill.value,
         vendor_day_costs,
+        belongs_to: email,
       },
     });
 
@@ -53,6 +59,10 @@ router.post('/cash_register', basicAuthMiddleware, async (req, res) => {
 router.delete('/cash_register', basicAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.query;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
 
     if (!id) {
       return res.status(400).json({ erro: 'O ID é obrigatório.' });
@@ -62,7 +72,7 @@ router.delete('/cash_register', basicAuthMiddleware, async (req, res) => {
       where: { id: parseInt(id) },
     });
 
-    if (!cashRegister) {
+    if (!cashRegister || cashRegister.belongs_to !== email) {
       return res.status(404).json({ erro: 'Registro de caixa não encontrado.' });
     }
 
@@ -85,6 +95,11 @@ router.delete('/cash_register', basicAuthMiddleware, async (req, res) => {
 router.get('/cash_register', basicAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.query;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     if (!id) {
       return res.status(400).json({ erro: 'O ID é obrigatório.' });
     }
@@ -97,7 +112,7 @@ router.get('/cash_register', basicAuthMiddleware, async (req, res) => {
       },
     });
 
-    if (!cashRegister) {
+    if (!cashRegister || cashRegister.belongs_to !== email) {
       return res.status(404).json({ erro: 'Registro de caixa não encontrado.' });
     }
 

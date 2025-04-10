@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -13,8 +14,15 @@ const formatDate = date => {
 router.get('/cash_registers', basicAuthMiddleware, async (req, res) => {
   try {
     const { vendor_id, client_id, page = 0 } = req.query;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
+    }
+
     const pageSize = 10;
-    const where = {};
+    const where = {
+      belongs_to: email,
+    };
 
     if (vendor_id) {
       where.vendor_id = Number(vendor_id);
