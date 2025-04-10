@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -18,9 +19,17 @@ router.get('/bills', basicAuthMiddleware, async (req, res) => {
   try {
     const { client_id, status, scheduled_date, page = 0 } = req.query;
 
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
+    }
+
     const parsedDate = scheduled_date ? parseDate(scheduled_date) : null;
 
-    const where = {};
+    const where = {
+      belongs_to: email,
+    };
+
     if (client_id) where.client_id = Number(client_id);
     if (status) where.status = status;
     if (parsedDate) where.scheduled_date = parsedDate;

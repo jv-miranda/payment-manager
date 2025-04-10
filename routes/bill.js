@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -27,9 +28,19 @@ router.post('/bill', basicAuthMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Data programada inválida.' });
     }
 
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
+    }
+
     if (id) {
       const existingBill = await prisma.bills.findUnique({ where: { id } });
-      if (existingBill && existingBill.status === 'pago') {
+
+      if (!existingBill || existingBill.belongs_to !== email) {
+        return res.status(403).json({ message: 'Cobrança não encontrada.' });
+      }
+
+      if (existingBill.status === 'pago') {
         return res.status(400).json({ message: 'Não é possível editar uma cobrança com status "pago".' });
       }
 
@@ -52,6 +63,7 @@ router.post('/bill', basicAuthMiddleware, async (req, res) => {
           scheduled_date: parsedDate.toDate(),
           value,
           status: 'pendente',
+          belongs_to: email,
         },
       });
     }
@@ -66,13 +78,20 @@ router.post('/bill', basicAuthMiddleware, async (req, res) => {
 router.get('/bill', basicAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.query;
-
     if (!id) {
       return res.status(400).json({ message: 'ID da cobrança é obrigatório.' });
     }
 
-    const bill = await prisma.bills.findUnique({
-      where: { id: Number(id) },
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
+    }
+
+    const bill = await prisma.bills.findFirst({
+      where: {
+        id: Number(id),
+        belongs_to: email,
+      },
       include: {
         client: {
           include: {
@@ -115,8 +134,16 @@ router.delete('/bill', basicAuthMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'ID da cobrança é obrigatório.' });
     }
 
-    const bill = await prisma.bills.findUnique({
-      where: { id: Number(id) },
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) {
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
+    }
+
+    const bill = await prisma.bills.findFirst({
+      where: {
+        id: Number(id),
+        belongs_to: email,
+      },
     });
 
     if (!bill) {
