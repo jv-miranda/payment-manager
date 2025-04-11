@@ -23,8 +23,11 @@ router.post('/cash_register', basicAuthMiddleware, async (req, res) => {
       return res.status(400).json({ erro: 'Todos os campos são obrigatórios.' });
     }
 
-    const bill = await prisma.bills.findUnique({
-      where: { id: bill_id },
+    const bill = await prisma.bills.findFirst({
+      where: {
+        id: bill_id,
+        belongs_to: email,
+      },
       select: { value: true },
     });
 

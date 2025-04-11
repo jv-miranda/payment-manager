@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -11,7 +12,13 @@ router.get('/vendors', basicAuthMiddleware, async (req, res) => {
     const pageSize = 10;
     const skip = parseInt(page) * pageSize;
 
-    const where = name ? { name: { contains: name, mode: 'insensitive' } } : {};
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ erro: 'Usuário não autenticado.' });
+
+    const where = {
+      ...(name && { name: { contains: name, mode: 'insensitive' } }),
+      belongs_to: email,
+    };
 
     const vendors = await prisma.vendor.findMany({
       where,
@@ -28,7 +35,10 @@ router.get('/vendors', basicAuthMiddleware, async (req, res) => {
     const vendorsWithAggregates = await Promise.all(
       vendors.map(async vendor => {
         const clientsQuantity = await prisma.client.count({
-          where: { vendor_id: vendor.id },
+          where: {
+            vendor_id: vendor.id,
+            belongs_to: email,
+          },
         });
 
         const statusCounts = await prisma.$queryRaw`
@@ -47,6 +57,7 @@ router.get('/vendors', basicAuthMiddleware, async (req, res) => {
              AND b.status = 'pendente' 
              AND b.scheduled_date < CURRENT_DATE
             WHERE c.vendor_id = ${vendor.id}
+              AND c.belongs_to = ${email}
             GROUP BY c.id
           ) sub
           GROUP BY status

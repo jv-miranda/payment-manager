@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -13,12 +14,18 @@ const formatDate = date => {
 router.get('/clients', basicAuthMiddleware, async (req, res) => {
   try {
     const { name, id, cpf, telephone, vendor_id, page = 0, status } = req.query;
+
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ erro: 'Usuário não autenticado.' });
+
     const filters = {};
     if (id) filters.id = Number(id);
     if (name) filters.name = { contains: name, mode: 'insensitive' };
     if (cpf) filters.cpf = cpf;
     if (telephone) filters.telephone = telephone;
     if (vendor_id) filters.vendor_id = Number(vendor_id);
+
+    filters.belongs_to = email;
 
     let clientIdsFilteredByStatus = null;
 
@@ -30,6 +37,7 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
           ON b.client_id = c.id 
          AND b.status = 'pendente' 
          AND b.scheduled_date < CURRENT_DATE
+        WHERE c.belongs_to = ${email}
         GROUP BY c.id
         HAVING
           CASE
@@ -73,7 +81,7 @@ router.get('/clients', basicAuthMiddleware, async (req, res) => {
           ON b.client_id = c.id 
          AND b.status = 'pendente' 
          AND b.scheduled_date < CURRENT_DATE
-        WHERE c.id IN (${Prisma.join(clientIds)})
+        WHERE c.id IN (${Prisma.join(clientIds)}) AND c.belongs_to = ${email}
         GROUP BY c.id
       `;
     }

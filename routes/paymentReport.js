@@ -1,14 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 router.get('/payment_report', basicAuthMiddleware, async (req, res) => {
   try {
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ erro: 'Usuário não autenticado.' });
+
     const totalClientsResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS total FROM clients;
+      SELECT COUNT(*)::int AS total FROM clients
+      WHERE belongs_to = ${email};
     `;
     const total_clients_quantity = totalClientsResult[0]?.total || 0;
 
@@ -27,6 +32,7 @@ router.get('/payment_report', basicAuthMiddleware, async (req, res) => {
           ON b.client_id = c.id
          AND b.status = 'pendente'
          AND b.scheduled_date < CURRENT_DATE
+        WHERE c.belongs_to = ${email}
         GROUP BY c.id
       ) sub
       GROUP BY status;

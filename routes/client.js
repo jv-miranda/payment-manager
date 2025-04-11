@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import moment from 'moment-timezone';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -31,12 +32,18 @@ const calculateClientStatus = async client_id => {
 router.get('/client', basicAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.query;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ erro: 'Usuário não autenticado.' });
+
     if (!id) {
       return res.status(400).json({ erro: 'O ID é obrigatório.' });
     }
 
-    const client = await prisma.client.findUnique({
-      where: { id: parseInt(id) },
+    const client = await prisma.client.findFirst({
+      where: {
+        id: parseInt(id),
+        belongs_to: email,
+      },
       include: { vendor: true },
     });
 
@@ -70,8 +77,21 @@ router.get('/client', basicAuthMiddleware, async (req, res) => {
 router.post('/client', basicAuthMiddleware, async (req, res) => {
   try {
     const { id, name, cpf, vendor_id, notes, telephone, address, cep } = req.body;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ erro: 'Usuário não autenticado.' });
 
     if (id) {
+      const existingClient = await prisma.client.findFirst({
+        where: {
+          id: Number(id),
+          belongs_to: email,
+        },
+      });
+
+      if (!existingClient) {
+        return res.status(403).json({ erro: 'Cliente não encontrado.' });
+      }
+
       await prisma.client.update({
         where: { id: Number(id) },
         data: {
@@ -98,6 +118,11 @@ router.post('/client', basicAuthMiddleware, async (req, res) => {
           telephone,
           address,
           cep,
+          users: {
+            connect: {
+              email: email,
+            },
+          },
         },
       });
     }

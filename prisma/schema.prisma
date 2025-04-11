@@ -28,7 +28,7 @@ model Vendor {
   belongs_to   String?
   CashRegister CashRegister[]
   Client       Client[]
-  users        User?          @relation(fields: [belongs_to], references: [email], onUpdate: NoAction, map: "fk_vendors_user_email")
+  users        User?          @relation(fields: [belongs_to], references: [email], onUpdate: SetNull, map: "fk_vendors_user_email")
 
   @@map("vendors")
 }
@@ -46,8 +46,8 @@ model Client {
   belongs_to   String?
   Bills        Bills[]
   CashRegister CashRegister[]
-  vendor       Vendor?        @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
-  users        User?          @relation(fields: [belongs_to], references: [email], onUpdate: NoAction, map: "fk_clients_user_email")
+  vendor       Vendor?        @relation(fields: [vendor_id], references: [id], onUpdate: SetNull)
+  users        User?          @relation(fields: [belongs_to], references: [email], onUpdate: SetNull, map: "fk_clients_user_email")
 
   @@map("clients")
 }
@@ -62,8 +62,8 @@ model Bills {
   value          Decimal        @db.Decimal(10, 2)
   created_at     DateTime?      @default(dbgenerated("timezone('America/Sao_Paulo'::text, CURRENT_TIMESTAMP)")) @db.Timestamptz(6)
   belongs_to     String?
-  client         Client?        @relation(fields: [client_id], references: [id], onUpdate: NoAction)
-  users          User?          @relation(fields: [belongs_to], references: [email], onUpdate: NoAction, map: "fk_bills_user_email")
+  client         Client?        @relation(fields: [client_id], references: [id], onUpdate: SetNull)
+  users          User?          @relation(fields: [belongs_to], references: [email], onUpdate: SetNull, map: "fk_bills_user_email")
   CashRegister   CashRegister[]
 
   @@map("bills")
@@ -78,10 +78,10 @@ model CashRegister {
   bill_value       Decimal   @db.Decimal(10, 2)
   vendor_day_costs Decimal   @db.Decimal(10, 2)
   belongs_to       String?
-  bill             Bills?    @relation(fields: [bill_id], references: [id], onUpdate: NoAction)
-  client           Client?   @relation(fields: [client_id], references: [id], onUpdate: NoAction)
-  vendor           Vendor?   @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
-  users            User?     @relation(fields: [belongs_to], references: [email], onUpdate: NoAction, map: "fk_cash_registers_user_email")
+  bill             Bills?    @relation(fields: [bill_id], references: [id], onUpdate: SetNull)
+  client           Client?   @relation(fields: [client_id], references: [id], onUpdate: SetNull)
+  vendor           Vendor?   @relation(fields: [vendor_id], references: [id], onUpdate: SetNull)
+  users            User?     @relation(fields: [belongs_to], references: [email], onUpdate: SetNull, map: "fk_cash_registers_user_email")
 
   @@map("cash_registers")
 }

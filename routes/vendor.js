@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import basicAuthMiddleware from '../middlewares/auth.js';
+import utils from '../utils/mainUtils.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -8,6 +9,12 @@ const prisma = new PrismaClient();
 router.get('/vendor', basicAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.query;
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+
+    if (!email) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     if (!id) {
       return res.status(400).json({ erro: 'O ID é obrigatório.' });
     }
@@ -19,9 +26,11 @@ router.get('/vendor', basicAuthMiddleware, async (req, res) => {
         name: true,
         cpf: true,
         telephone: true,
+        belongs_to: true,
       },
     });
-    if (!vendor) {
+
+    if (!vendor || vendor.belongs_to !== email) {
       return res.status(404).json({ erro: 'Vendedor não encontrado.' });
     }
 
@@ -64,7 +73,10 @@ router.get('/vendor', basicAuthMiddleware, async (req, res) => {
     }
 
     res.json({
-      ...vendor,
+      id: vendor.id,
+      name: vendor.name,
+      cpf: vendor.cpf,
+      telephone: vendor.telephone,
       clients_quantity: clientsQuantity,
       clients_quantitiy_by_status: clientsQuantityByStatus,
     });
@@ -76,6 +88,9 @@ router.get('/vendor', basicAuthMiddleware, async (req, res) => {
 
 router.post('/vendor', basicAuthMiddleware, async (req, res) => {
   try {
+    const email = utils.getEmailFromAuthHeader(req.headers.authorization);
+    if (!email) return res.status(401).json({ message: 'Usuário não autenticado.' });
+
     const { id, name, cpf, telephone } = req.body;
 
     if (!name || !cpf || !telephone) {
@@ -86,17 +101,36 @@ router.post('/vendor', basicAuthMiddleware, async (req, res) => {
     const telephoneFormatted = telephone.replace(/\D/g, '');
 
     if (id) {
+      const vendor = await prisma.vendor.findUnique({ where: { id } });
+
+      if (!vendor) {
+        return res.status(404).json({ message: 'Vendedor não encontrado.' });
+      }
+
+      if (vendor.belongs_to !== email) {
+        return res.status(403).json({ message: 'Vendedor não encontrad.' });
+      }
+
       await prisma.vendor.update({
         where: { id },
-        data: { name, cpf: cpfFormatted, telephone: telephoneFormatted },
+        data: {
+          name,
+          cpf: cpfFormatted,
+          telephone: telephoneFormatted,
+        },
       });
     } else {
       await prisma.vendor.create({
-        data: { name, cpf: cpfFormatted, telephone: telephoneFormatted },
+        data: {
+          name,
+          cpf: cpfFormatted,
+          telephone: telephoneFormatted,
+          belongs_to: email,
+        },
       });
     }
 
-    return res.status(200).send();
+    return res.sendStatus(200);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Erro interno no servidor.' });
